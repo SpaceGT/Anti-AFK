@@ -67,6 +67,7 @@ PROCESS_OVERRIDES := Map(
 ;                                    Script
 ; ------------------------------------------------------------------------------
 #SingleInstance
+InstallKeybdHook()
 InstallMouseHook()
 
 windowList := Map()
@@ -335,7 +336,3 @@ updateScript()
 ; Start Anti-AFK
 updateScript()
 SetTimer(updateScript, POLL_INTERVAL*1000)
-return
-
-; Stop Anti-AFK
-End::ExitApp
