@@ -227,6 +227,7 @@ updateSysTray(windowList)
             for program, windows in monitor
                 newTip := newTip program " - " windows "`n"
 
+            newTip := RTrim(newTip, "`n")
             A_IconTip := newTip
         }
         else
@@ -235,6 +236,7 @@ updateSysTray(windowList)
             for program, windows in managed
                 newTip := newTip program " - " windows "`n"
 
+            newTip := RTrim(newTip, "`n")
             A_IconTip := newTip
         }
 
@@ -252,6 +254,7 @@ updateSysTray(windowList)
         for program, windows in monitor
             newTip := newTip program " - " windows "`n"
 
+        newTip := RTrim(newTip, "`n")
         A_IconTip := newTip
 
         return
