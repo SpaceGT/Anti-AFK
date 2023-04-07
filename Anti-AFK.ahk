@@ -101,12 +101,20 @@ if (!A_IsAdmin)
 }
 
 ; Reset the AFK timer for a particular window, blocking input if required.
-; The active window's ID is stored while the target window is made transparent and activated. Any AFK timers
-; are reset and the target window is sent to the back before being made opaque again. After this, focus is
+; Input is sent directly to the target window if it's active; If there is no active window the target
+; window is made active.
+; If another window is active, its handle is stored while the target is made transparent and activated.
+; Any AFK timers are reset and the target is sent to the back before being made opaque again. Focus is then
 ; restored to the original window.
-resetTimer(targetWindow, foreground, resetAction, DenyInput)
+resetTimer(targetWindow, resetAction, DenyInput)
 {
-    if (foreground)
+    ; Activates the target window if there is no active window or the Desktop is focused.
+    ; Bringing the Desktop window to the front can cause some scaling issues, so we ignore it.
+    ; The Desktop's window has a class of "WorkerW" or "Progman".
+    if (!WinExist("A") || (WinGetClass("A") = "WorkerW" || WinGetClass("A") = "Progman"))
+        WinActivate("ahk_id " targetWindow)
+
+    if (WinActive("ahk_id " targetWindow))
     {
         resetAction()
         return
@@ -299,7 +307,6 @@ tickWindowList(windowList)
 
                 resetTimer(
                     handle,
-                    WinActive("ahk_id" handle),
                     getValue("TASK", program),
                     getValue("BLOCK_INPUT", program)
                 )
