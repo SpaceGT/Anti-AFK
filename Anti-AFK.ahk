@@ -113,8 +113,12 @@ resetTimer(targetWindow, resetAction, DenyInput)
     ; Bringing the Desktop window to the front can cause some scaling issues, so we ignore it.
     ; The Desktop's window has a class of "WorkerW" or "Progman".
     if (!WinExist("A") || (WinGetClass("A") = "WorkerW" || WinGetClass("A") = "Progman"))
+    {
         WinActivate("ahk_id " targetWindow)
+        WinWaitActive("ahk_id " targetWindow)
+    }
 
+    ; Send input directly if the target window is already active.
     if (WinActive("ahk_id " targetWindow))
     {
         resetAction()
@@ -127,7 +131,9 @@ resetTimer(targetWindow, resetAction, DenyInput)
     oldWindow := WinGetID("A")
 
     WinSetTransparent(0, "ahk_id " targetWindow)
+
     WinActivate("ahk_id " targetWindow)
+    WinWaitActive("ahk_id " targetWindow)
 
     resetAction()
 
@@ -135,6 +141,7 @@ resetTimer(targetWindow, resetAction, DenyInput)
     WinSetTransparent("OFF", "ahk_id " targetWindow)
 
     WinActivate("ahk_id " oldWindow)
+    WinWaitActive("ahk_id " oldWindow)
 
     if (DenyInput && A_IsAdmin)
         BlockInput("Off")
