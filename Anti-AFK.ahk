@@ -128,7 +128,7 @@ resetTimer(targetWindow, resetAction, DenyInput)
     if (DenyInput && A_IsAdmin)
         BlockInput("On")
 
-    oldWindow := WinGetID("A")
+    oldWindow := getWindowInfo("A")
 
     WinSetTransparent(0, "ahk_id " targetWindow)
 
@@ -140,11 +140,59 @@ resetTimer(targetWindow, resetAction, DenyInput)
     WinMoveBottom("ahk_id " targetWindow)
     WinSetTransparent("OFF", "ahk_id " targetWindow)
 
-    WinActivate("ahk_id " oldWindow)
-    WinWaitActive("ahk_id " oldWindow)
+    oldTarget := getWindow(
+        oldWindow["ID"],
+        oldWindow["PID"],
+        oldWindow["EXE"],
+        "ahk_id " targetWindow
+    )
+
+    WinActivate(oldTarget)
+    WinWaitActive(oldTarget)
 
     if (DenyInput && A_IsAdmin)
         BlockInput("Off")
+}
+
+; Fetch the window which best matches the given criteria.
+; Some windows are ephemeral and will be closed after user input. In this case we try
+; increasingly vague identifiers until we find a related window. If a window is still
+; not found a fallback is used instead.
+getWindow(window_ID, process_ID, process_name, fallback)
+{
+    if (WinExist("ahk_id " window_ID))
+    {
+        return "ahk_id " window_ID
+    }
+    
+    if (WinExist("ahk_pid " process_ID))
+    {
+        return "ahk_pid " process_ID
+    }
+
+    if (WinExist("ahk_exe " process_name))
+    {
+        return "ahk_exe " process_name
+    }
+
+    return fallback
+}
+
+; Get information about a window so that it can be found and reactivated later.
+getWindowInfo(target)
+{
+    windowInfo := Map()
+
+    if (!WinExist(target))
+    {
+        return windowInfo
+    }
+
+    windowInfo["ID"] := WinGetID(target)
+    windowInfo["PID"] := WinGetPID(target)
+    windowInfo["EXE"] := WinGetProcessName(target)
+
+    return windowInfo
 }
 
 ; Calculate the number of polls it will take for the time (in seconds) to pass.
