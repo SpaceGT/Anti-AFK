@@ -107,19 +107,21 @@ if (!A_IsAdmin)
 ; If another window is active, its handle is stored while the target is made transparent and activated.
 ; Any AFK timers are reset and the target is sent to the back before being made opaque again. Focus is then
 ; restored to the original window.
-resetTimer(targetWindow, resetAction, DenyInput)
+resetTimer(windowID, resetAction, DenyInput)
 {
+    activeInfo := getWindowInfo("A")
+    targetInfo := getWindowInfo("ahk_id " windowID)
+
+    targetWindow := "ahk_id " targetInfo["ID"]
+
     ; Activates the target window if there is no active window or the Desktop is focused.
     ; Bringing the Desktop window to the front can cause some scaling issues, so we ignore it.
     ; The Desktop's window has a class of "WorkerW" or "Progman".
-    if (!WinExist("A") || (WinGetClass("A") = "WorkerW" || WinGetClass("A") = "Progman"))
-    {
-        WinActivate("ahk_id " targetWindow)
-        WinWaitActive("ahk_id " targetWindow)
-    }
+    if (!activeInfo.Count || (activeInfo["CLS"] = "WorkerW" || activeInfo["CLS"] = "Progman"))
+        activateWindow(targetWindow)
 
     ; Send input directly if the target window is already active.
-    if (WinActive("ahk_id " targetWindow))
+    if (WinActive(targetWindow))
     {
         resetAction()
         return
@@ -128,27 +130,22 @@ resetTimer(targetWindow, resetAction, DenyInput)
     if (DenyInput && A_IsAdmin)
         BlockInput("On")
 
-    oldWindow := getWindowInfo("A")
-
-    WinSetTransparent(0, "ahk_id " targetWindow)
-
-    WinActivate("ahk_id " targetWindow)
-    WinWaitActive("ahk_id " targetWindow)
+    WinSetTransparent(0, targetWindow)
+    activateWindow(targetWindow)
 
     resetAction()
 
-    WinMoveBottom("ahk_id " targetWindow)
-    WinSetTransparent("OFF", "ahk_id " targetWindow)
+    WinMoveBottom(targetWindow)
+    WinSetTransparent("OFF", targetWindow)
 
-    oldTarget := getWindow(
-        oldWindow["ID"],
-        oldWindow["PID"],
-        oldWindow["EXE"],
-        "ahk_id " targetWindow
+    oldActiveWindow := getWindow(
+        activeInfo["ID"],
+        activeInfo["PID"],
+        activeInfo["EXE"],
+        targetWindow
     )
 
-    WinActivate(oldTarget)
-    WinWaitActive(oldTarget)
+    activateWindow(oldActiveWindow)
 
     if (DenyInput && A_IsAdmin)
         BlockInput("Off")
@@ -161,19 +158,13 @@ resetTimer(targetWindow, resetAction, DenyInput)
 getWindow(window_ID, process_ID, process_name, fallback)
 {
     if (WinExist("ahk_id " window_ID))
-    {
         return "ahk_id " window_ID
-    }
     
     if (WinExist("ahk_pid " process_ID))
-    {
         return "ahk_pid " process_ID
-    }
 
     if (WinExist("ahk_exe " process_name))
-    {
         return "ahk_exe " process_name
-    }
 
     return fallback
 }
@@ -184,15 +175,26 @@ getWindowInfo(target)
     windowInfo := Map()
 
     if (!WinExist(target))
-    {
         return windowInfo
-    }
 
     windowInfo["ID"] := WinGetID(target)
+    windowInfo["CLS"] := WinGetClass(target)
     windowInfo["PID"] := WinGetPID(target)
     windowInfo["EXE"] := WinGetProcessName(target)
 
     return windowInfo
+}
+
+; Activate a window and yield until it does so.
+activateWindow(target)
+{
+    if (!WinExist(target))
+        return False
+
+    WinActivate(target)
+    WinWaitActive(target)
+
+    return True
 }
 
 ; Calculate the number of polls it will take for the time (in seconds) to pass.
